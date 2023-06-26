@@ -12,7 +12,14 @@ class RankingTable {
         ];
       }
     }
-  
+    
+    public function recordResult($playerName, $score) {
+        if (array_key_exists($playerName, $this->players)) {
+          $this->players[$playerName]['score'] += $score;
+          $this->players[$playerName]['gamesPlayed']++;
+        }
+      }
+   
 }
 
 ?>
