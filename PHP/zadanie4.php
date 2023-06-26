@@ -22,4 +22,11 @@ $thesaurus = array(
     return json_encode($result);
 }
 
+
+
+echo getSynonyms("small");
+echo "<br>";
+echo getSynonyms("asleast");
+
+
 ?>
