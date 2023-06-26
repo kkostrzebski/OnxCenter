@@ -18,7 +18,15 @@ class RankingTable {
           $this->players[$playerName]['score'] += $score;
           $this->players[$playerName]['gamesPlayed']++;
         }
-      }
+    }
+
+
+    public function playerRank($rank) {
+        arsort($this->players);
+    
+        $sortedPlayers = array_keys($this->players);
+        return $sortedPlayers[$rank - 1];
+    }
    
 }
 
