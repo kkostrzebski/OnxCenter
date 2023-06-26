@@ -14,7 +14,12 @@ $thesaurus = array(
         $synonyms = array();
     }
 
-    
+    $result = array(
+        "word" => $word,
+        "synonyms" => $synonyms
+    );
+
+    return json_encode($result);
 }
 
 ?>
