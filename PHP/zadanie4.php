@@ -8,6 +8,12 @@ $thesaurus = array(
   function getSynonyms($word) {
     global $thesaurus;
 
+    if (array_key_exists($word, $thesaurus)) {
+        $synonyms = $thesaurus[$word];
+    } else {
+        $synonyms = array();
+    }
+
     
 }
 
