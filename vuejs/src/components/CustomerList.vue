@@ -1,141 +1,145 @@
 <template>
-	<div>
-		<h1>Lista klientów</h1>
-		<table>
-			<thead>
-				<tr>
-					<th>ID</th>
-					<th>Imię</th>
-					<th>Nazwisko</th>
-					<th>Akcje</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr v-for="customer in customers" :key="customer.id">
-					<td>{{ customer.id }}</td>
-					<td>{{ customer.firstName }}</td>
-					<td>{{ customer.lastName }}</td>
-					<td>
-						<router-link :to="'/customer/' + customer.id">Szczegóły</router-link>
-						<button @click="editCustomer(customer.id)">Edytuj</button>
-						<button @click="deleteCustomer(customer.id)">Usuń</button>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-		<h2>Dodaj nowego klienta</h2>
-		<form @submit.prevent="addCustomer">
-			<label>
-				Imię:
-				<input type="text" v-model="newCustomer.firstName" required />
-			</label>
-			<label>
-				Nazwisko:
-				<input type="text" v-model="newCustomer.lastName" required />
-			</label>
-			<button type="submit">Dodaj klienta</button>
-		</form>
-		<h2>Edytuj klienta</h2>
-		<form v-if="editingCustomer" @submit.prevent="updateCustomer">
-			<label>
-				Imię:
-				<input type="text" v-model="editingCustomer.firstName" required />
-			</label>
-			<label>
-				Nazwisko:
-				<input type="text" v-model="editingCustomer.lastName" required />
-			</label>
-			<button type="submit">Zapisz zmiany</button>
-			<button @click="cancelEdit">Anuluj</button>
-		</form>
-	</div>
+  <div>
+    <h1>Lista klientów</h1>
+    <div>
+      <label>
+        Sortuj według:
+        <select v-model="sortOption">
+          <option value="">-- Wybierz opcję --</option>
+          <option value="firstName">Imię</option>
+          <option value="lastName">Nazwisko</option>
+        </select>
+      </label>
+      <label>
+        Filtruj według imienia:
+        <input type="text" v-model="filterQuery" />
+      </label>
+      <label>
+        Wyszukaj:
+        <input type="text" v-model="searchQuery" />
+      </label>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Imię</th>
+          <th>Nazwisko</th>
+          <th>Akcje</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="customer in paginatedCustomers" :key="customer.id">
+          <td>{{ customer.id }}</td>
+          <td>{{ customer.firstName }}</td>
+          <td>{{ customer.lastName }}</td>
+          <td>
+            <router-link :to="'/customer/' + customer.id">Szczegóły</router-link>
+            <button @click="deleteCustomer(customer.id)">Usuń</button>
+            <button @click="editCustomer(customer.id)">Edytuj</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div>
+      <button :disabled="currentPage === 1" @click="previousPage">Poprzednia strona</button>
+      <button :disabled="currentPage === totalPages" @click="nextPage">Następna strona</button>
+    </div>
+  </div>
 </template>
 
 <script>
-import axios from 'axios'
+import axios from 'axios';
 
 export default {
-	data() {
-		return {
-			customers: [],
-			newCustomer: {
-				firstName: '',
-				lastName: '',
-			},
-			editingCustomer: null,
-		}
-	},
-	created() {
-		this.fetchCustomers()
-	},
-	methods: {
-		fetchCustomers() {
-			axios
-				.get('/api/customers')
-				.then(response => {
-					this.customers = response.data
-				})
-				.catch(error => {
-					console.error(error)
-				})
-		},
-		addCustomer() {
-			if (!this.newCustomer.firstName || !this.newCustomer.lastName) {
-				alert('Wprowadź imię i nazwisko klienta!')
-				return
-			}
+  data() {
+    return {
+      customers: [],
+      sortOption: '',
+      filterQuery: '',
+      searchQuery: '',
+      currentPage: 1,
+      pageSize: 10
+    };
+  },
+  computed: {
+    filteredCustomers() {
+      let filtered = this.customers;
 
-			axios
-				.post('/api/customers', this.newCustomer)
-				.then(response => {
-					this.customers.push(response.data)
-					this.newCustomer.firstName = ''
-					this.newCustomer.lastName = ''
-				})
-				.catch(error => {
-					console.error(error)
-				})
-		},
-		deleteCustomer(customerId) {
-			if (confirm('Czy na pewno chcesz usunąć tego klienta?')) {
-				axios
-					.delete(`/api/customers/${customerId}`)
-					.then(() => {
-						this.customers = this.customers.filter(customer => customer.id !== customerId)
-						alert('Klient został usunięty!')
-					})
-					.catch(error => {
-						console.error(error)
-					})
-			}
-		},
-		editCustomer(customerId) {
-			this.editingCustomer = this.customers.find(customer => customer.id === customerId)
-		},
-		updateCustomer() {
-			if (!this.editingCustomer.firstName || !this.editingCustomer.lastName) {
-				alert('Wprowadź imię i nazwisko klienta!')
-				return
-			}
+      // Filtrowanie po imieniu
+      if (this.filterQuery) {
+        filtered = filtered.filter(customer =>
+          customer.firstName.toLowerCase().includes(this.filterQuery.toLowerCase())
+        );
+      }
 
-			axios
-				.put(`/api/customers/${this.editingCustomer.id}`, this.editingCustomer)
-				.then(response => {
-					const updatedCustomer = response.data
-					const index = this.customers.findIndex(customer => customer.id === updatedCustomer.id)
-					if (index !== -1) {
-						this.customers.splice(index, 1, updatedCustomer)
-						this.editingCustomer = null
-						alert('Klient został zaktualizowany!')
-					}
-				})
-				.catch(error => {
-					console.error(error)
-				})
-		},
-		cancelEdit() {
-			this.editingCustomer = null
-		},
-	},
-}
+      // Wyszukiwanie ogólne
+      if (this.searchQuery) {
+        filtered = filtered.filter(customer =>
+          Object.values(customer).some(
+            value => value && value.toString().toLowerCase().includes(this.searchQuery.toLowerCase())
+          )
+        );
+      }
+
+      // Sortowanie
+      if (this.sortOption) {
+        filtered = filtered.sort((a, b) =>
+          a[this.sortOption].localeCompare(b[this.sortOption])
+        );
+      }
+
+      return filtered;
+    },
+    paginatedCustomers() {
+      const startIndex = (this.currentPage - 1) * this.pageSize;
+      const endIndex = startIndex + this.pageSize;
+      return this.filteredCustomers.slice(startIndex, endIndex);
+    },
+    totalPages() {
+      return Math.ceil(this.filteredCustomers.length / this.pageSize);
+    }
+  },
+  created() {
+    this.fetchCustomers();
+  },
+  methods: {
+    fetchCustomers() {
+      // Pobierz listę klientów z serwera
+      axios.get('/api/customers')
+        .then(response => {
+          this.customers = response.data;
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    },
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
+    },
+    deleteCustomer(customerId) {
+      if (confirm('Czy na pewno chcesz usunąć tego klienta?')) {
+        axios.delete(`/api/customers/${customerId}`)
+          .then(() => {
+            this.fetchCustomers();
+            alert('Klient został usunięty!');
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      }
+    },
+    editCustomer(customerId) {
+      // Przekieruj do formularza edycji klienta
+      this.$router.push(`/customer/edit/${customerId}`);
+    }
+  }
+};
 </script>
