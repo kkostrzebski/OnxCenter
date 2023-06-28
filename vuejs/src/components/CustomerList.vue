@@ -1,27 +1,45 @@
 <template>
   <div>
     <h1>Lista klientów</h1>
-    <ul>
-      <li v-for="customer in customers" :key="customer.id">
-        <router-link :to="`/customers/${customer.id}`">{{ customer.name }}</router-link>
-      </li>
-    </ul>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Imię</th>
+          <th>Nazwisko</th>
+          <th>Akcje</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="customer in customers" :key="customer.id">
+          <td>{{ customer.id }}</td>
+          <td>{{ customer.firstName }}</td>
+          <td>{{ customer.lastName }}</td>
+          <td>
+            <router-link :to="'/customer/' + customer.id">Szczegóły</router-link>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
+
 export default {
   data() {
     return {
       customers: [],
     };
   },
-  mounted() {
+  created() {
+
     this.fetchCustomers();
   },
   methods: {
     fetchCustomers() {
+
       axios.get('/api/customers')
         .then(response => {
           this.customers = response.data;
